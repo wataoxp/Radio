@@ -39,14 +39,14 @@ static inline void CR2SetUP(I2C_TypeDef *I2Cx,uint8_t address,uint16_t direction
 
 void PushI2C_Mem_Write(I2C_TypeDef *I2Cx,uint8_t address,uint8_t data,uint16_t Reg,uint8_t RegSize);
 /**
- * Send single data
+ * Send Single data
  * @param I2Cx...I2C Instance
  * @param address...SlaveAddress
  * @param data...SendData
  * @param Reg...SlaveRegisterAddress
  * @param RegSize...RegisterSize
- * 		@arg I2C_MEMADD_SIZE_8BIT
- * 		@arg I2C_MEMADD_SIZE_16BIT
+ * 	@arg I2C_MEMADD_SIZE_8BIT
+ * 	@arg I2C_MEMADD_SIZE_16BIT
  **/
 void StreamI2C_Mem_Write(I2C_TypeDef *I2Cx,uint8_t address,uint8_t *data,uint16_t Reg,uint8_t RegSize,uint8_t length);
 /**
@@ -56,8 +56,8 @@ void StreamI2C_Mem_Write(I2C_TypeDef *I2Cx,uint8_t address,uint8_t *data,uint16_
  * @param data...Databuffer Address
  * @param Reg...SlaveRegisterAddress
  * @param RegSize...RegisterSize
- * 		@arg I2C_MEMADD_SIZE_8BIT
- * 		@arg I2C_MEMADD_SIZE_16BIT
+ * 	@arg I2C_MEMADD_SIZE_8BIT
+ * 	@arg I2C_MEMADD_SIZE_16BIT
  * @param length...Send Datasize
  **/
 void I2C_Master_Transmit(I2C_TypeDef *I2Cx,uint8_t address,uint8_t *data,uint8_t length);
@@ -70,8 +70,8 @@ void I2C_Mem_Read(I2C_TypeDef *I2Cx,uint8_t address,uint8_t *buffer,uint16_t Reg
  * @param buffer...ReadDatabuffer Address
  * @param Reg...SlaveRegisterAddress
  * @param RegSize...RegisterSize
- * 		@arg I2C_MEMADD_SIZE_8BIT
- * 		@arg I2C_MEMADD_SIZE_16BIT
+ * 	@arg I2C_MEMADD_SIZE_8BIT
+ * 	@arg I2C_MEMADD_SIZE_16BIT
  * @param length...Read Datasize
  **/
 
