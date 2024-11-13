@@ -15,5 +15,5 @@ When using another MCU
 * Input control differs for each MCU, so please change it.
 
 ## Licence
-
+[MIT](https://github.com/wataoxp/Radio/blob/main/LICENSE)
 
