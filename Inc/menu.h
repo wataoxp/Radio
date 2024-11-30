@@ -2,7 +2,6 @@
 #define MENU_H
 
 #include "main.h"
-//2024.11-1追記 gccの最適化レベルを-O1にした
 /*
  * F446REの場合
  * XOR...PORTCの値は0x83(1000 0011)なので同じ値でXORすると常に0となる。
