@@ -54,6 +54,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_I2C2_Init(void);
+static void MX_TIM14_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -99,10 +100,11 @@ int main(void)
   MX_GPIO_Init();
   MX_I2C1_Init();
   MX_I2C2_Init();
+  MX_TIM14_Init();
   /* USER CODE BEGIN 2 */
-  	LL_I2C_Enable(I2C1);
-  	LL_I2C_Enable(I2C2);
-	LCDInit(I2C1);
+  	SetHandle(I2C1, I2C2, TIM14);
+  	LL_TIM_ClearFlag_UPDATE(TIM14);
+	LCDInit(I2C1,RESET_GPIO_Port,RESET_Pin);
 	RadioInit(I2C2);
   	LL_mDelay(100);
 
@@ -133,18 +135,18 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	input = InputMenu(I2C1);
+	input = InputMenu();
 	LL_mDelay(30);
 	switch (input)
 	{
 	case CENTER_PUSH:
-		SeekMenu(I2C1, I2C2);
+		SeekMenu();
 		break;
 	case LEFT_PUSH:
-		TuneMenu(I2C1, I2C2);
+		TuneMenu();
 		break;
 	case RIGHT_PUSH:
-		FreqMenu(I2C1, I2C2);
+		FreqMenu();
 		break;
 	case BACK_PUSH:
 		homeDisp ^= 1;
@@ -159,7 +161,7 @@ int main(void)
 	StringLCD(I2C1, LowerStr, strlen(LowerStr));
 	if(homeDisp)
 	{
-		ChannelDisp(I2C1, I2C2);
+		ChannelDisp();
 	}
 	else
 	{
@@ -345,6 +347,42 @@ static void MX_I2C2_Init(void)
   /* USER CODE BEGIN I2C2_Init 2 */
 
   /* USER CODE END I2C2_Init 2 */
+
+}
+
+/**
+  * @brief TIM14 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM14_Init(void)
+{
+
+  /* USER CODE BEGIN TIM14_Init 0 */
+
+  /* USER CODE END TIM14_Init 0 */
+
+  LL_TIM_InitTypeDef TIM_InitStruct = {0};
+
+  /* Peripheral clock enable */
+  LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_TIM14);
+
+  /* TIM14 interrupt Init */
+  NVIC_SetPriority(TIM14_IRQn, 0);
+  NVIC_EnableIRQ(TIM14_IRQn);
+
+  /* USER CODE BEGIN TIM14_Init 1 */
+
+  /* USER CODE END TIM14_Init 1 */
+  TIM_InitStruct.Prescaler = 63999;
+  TIM_InitStruct.CounterMode = LL_TIM_COUNTERMODE_UP;
+  TIM_InitStruct.Autoreload = 49999;
+  TIM_InitStruct.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
+  LL_TIM_Init(TIM14, &TIM_InitStruct);
+  LL_TIM_DisableARRPreload(TIM14);
+  /* USER CODE BEGIN TIM14_Init 2 */
+
+  /* USER CODE END TIM14_Init 2 */
 
 }
 
