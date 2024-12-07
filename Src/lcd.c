@@ -2,7 +2,7 @@
 #include "lcd.h"
 #include "ll_i2c.h"
 
-void LCDInit(I2C_TypeDef *I2Cx)
+void LCDInit(I2C_TypeDef *I2Cx,GPIO_TypeDef *GPIOx, uint32_t PinMask)
 {
 	uint8_t config[] = {
 			  FUNCTION_SET_OFF,FUNCTION_SET_ON,ICON_CONTRAST_CMD,CONTRAST_CMD,FUNCTION_SET_OFF,
@@ -10,9 +10,9 @@ void LCDInit(I2C_TypeDef *I2Cx)
 	uint8_t i;
 
 	//リセット、起動
-	LL_GPIO_ResetOutputPin(RESET_GPIO_Port, RESET_Pin);
+	LL_GPIO_ResetOutputPin(GPIOx, PinMask);
 	LL_mDelay(1);
-	LL_GPIO_SetOutputPin(RESET_GPIO_Port, RESET_Pin);
+	LL_GPIO_SetOutputPin(GPIOx, PinMask);
 	//起動後は40ms待つ。また各コマンド送信後は20us以上ウェイトする
 	LL_mDelay(40);
 
