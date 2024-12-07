@@ -73,7 +73,7 @@ static inline void CMDSend(I2C_TypeDef *I2Cx, uint8_t cmd)
 	PushI2C_Mem_Write(I2Cx, LCD_ADDRESS, cmd, CMD_CTRL, I2C_MEMADD_SIZE_8BIT);
 }
 
-void LCDInit(I2C_TypeDef *I2Cx);
+void LCDInit(I2C_TypeDef *I2Cx,GPIO_TypeDef *GPIOx, uint32_t PinMask);
 void PointClear(I2C_TypeDef *I2Cx);
 /*
  * LCDの1行のみを消す関数
