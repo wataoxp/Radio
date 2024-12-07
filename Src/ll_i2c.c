@@ -94,7 +94,7 @@ void I2C_Mem_Read(I2C_TypeDef *I2Cx,uint8_t address,uint8_t *buffer,uint16_t Reg
 		while(LL_I2C_IsActiveFlag_TXE(I2Cx) != TXE_READY);
 	}
 
-	while(!LL_I2C_IsActiveFlag_TC(I2Cx));	//転送が完了したかチェック
+	while(LL_I2C_IsActiveFlag_TC(I2Cx) != TC_COMPLETE); //転送が完了したかチェック
 
 	CR2SetUP(I2Cx, address, LL_I2C_REQUEST_READ, length, LL_I2C_MODE_AUTOEND);
 
