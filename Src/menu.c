@@ -45,17 +45,27 @@ const uint16_t ChanStation[STATION_NUM + 2] = {
 		FM_BUNKA,
 		FM_NIPPON,
 };
-Draw DrawDisp;
-void SeekMenu(I2C_TypeDef *lcdi2c, I2C_TypeDef *radioi2c)
+static I2C_TypeDef *lcdi2c;
+static I2C_TypeDef *radioi2c;
+static TIM_TypeDef *TIMx;
+
+void SetHandle(I2C_TypeDef *lcdHandle, I2C_TypeDef *radioHandle,TIM_TypeDef *TIMHandle)
+{
+	lcdi2c = lcdHandle;
+	radioi2c = radioHandle;
+	TIMx = TIMHandle;
+}
+
+void SeekMenu(void)
 {
 	uint8_t skmode;
 	uint8_t flag_sk = 1;
 	uint8_t type = SEEK;
 
-	DispUpdate(lcdi2c,radioi2c, SEEK);
+	DispUpdate(SEEK);
 	while(flag_sk)
 	{
-		skmode = InputMenu(lcdi2c);
+		skmode = InputMenu();
 
 		switch(skmode)
 		{
@@ -63,12 +73,12 @@ void SeekMenu(I2C_TypeDef *lcdi2c, I2C_TypeDef *radioi2c)
 			type = SeekChan;
 			break;
 		case LEFT_PUSH:
-			DispUpdate(lcdi2c, radioi2c, Skwait);
+			DispUpdate(Skwait);
 			Seek(radioi2c, FLG_SEEKDOWN);
 			type = SkDn;
 			break;
 		case RIGHT_PUSH:
-			DispUpdate(lcdi2c, radioi2c, Skwait);
+			DispUpdate(Skwait);
 			Seek(radioi2c, FLG_SEEKUP);
 			type = SkUp;
 			break;
@@ -79,20 +89,20 @@ void SeekMenu(I2C_TypeDef *lcdi2c, I2C_TypeDef *radioi2c)
 		default:
 			continue;
 		}
-		DispUpdate(lcdi2c, radioi2c, type);
+		DispUpdate(type);
 	}
 }
-void TuneMenu(I2C_TypeDef *lcdi2c, I2C_TypeDef *radioi2c)
+void TuneMenu(void)
 {
 	uint8_t tnmode;
 	uint8_t flag_tn = 1;
 	uint8_t list = 0;
 
-	DispUpdate(lcdi2c, radioi2c, TUNE);
+	DispUpdate(TUNE);
 
 	while(flag_tn)
 	{
-		tnmode = InputMenu(lcdi2c);
+		tnmode = InputMenu();
 
 		switch(tnmode)
 		{
@@ -115,7 +125,7 @@ void TuneMenu(I2C_TypeDef *lcdi2c, I2C_TypeDef *radioi2c)
 		StringLCD(lcdi2c, StationName[list], strlen(StationName[list]));
 	}
 }
-void FreqMenu(I2C_TypeDef *lcdi2c, I2C_TypeDef *radioi2c)
+void FreqMenu(void)
 {
 	static FreqTypedef obj;
 	static const char CheckStr[] = "OK??";
@@ -125,14 +135,14 @@ void FreqMenu(I2C_TypeDef *lcdi2c, I2C_TypeDef *radioi2c)
 	uint16_t value = 0;	//ここ初期化しないと正しい値にならないぞ！
 
 	InitTypedef(&obj);
-	DispUpdate(lcdi2c,radioi2c, FREQ);
+	DispUpdate(FREQ);
 	CMDSend(lcdi2c, (DISP_CMD | CUSOR_ON));	//カーソルを表示
 	LL_mDelay(1);
 	SetCusor(lcdi2c, obj.position);
 
 	while(flag_fq)
 	{
-		fqmode = InputMenu(lcdi2c);
+		fqmode = InputMenu();
 
 		switch(fqmode)
 		{
@@ -176,13 +186,13 @@ void FreqMenu(I2C_TypeDef *lcdi2c, I2C_TypeDef *radioi2c)
 			if(obj.mode == LEFT_PUSH || obj.mode == RIGHT_PUSH)
 			{
 				InitTypedef(&obj);
-				DispUpdate(lcdi2c, radioi2c, FREQ);
+				DispUpdate(FREQ);
 				SetCusor(lcdi2c, FREQ_START_POSTION);
 			}
 		}
 		else //cntが4になったとき(CENTERが押された)のみここに来る
 		{
-			DispUpdate(lcdi2c, radioi2c, FREQ);
+			DispUpdate(FREQ);
 			for(uint8_t i = 0; i < 3; i++)
 			{
 				value = value * 10 + obj.freq[i];
@@ -209,7 +219,7 @@ void FreqUpdate(FreqTypedef *obj)
 	{
 		if(obj->freq[0] == 7)
 		{
-			if(obj->currentFreq < 6) {obj->currentFreq = 6;}
+			if(obj->currentFreq < 6) {obj->currentFreq = 6;}	//Freqが6未満の時、これが無いと減るのみになってしまう
 
 			if(obj->mode == LEFT_PUSH){
 				obj->currentFreq = (obj->currentFreq > 6)? obj->currentFreq-1 : 9;}
@@ -243,7 +253,7 @@ void InitTypedef(FreqTypedef *obj)
 	obj->freqAsci = FREQ_DEFAULT_ASCI;
 }
 //基本的には下記の関数で画面を更新する
-void DispUpdate(I2C_TypeDef *lcdi2c, I2C_TypeDef *radioi2c, uint8_t mode)
+void DispUpdate(uint8_t mode)
 {
 
 	static const char waitSeek[] = "SeekNow";
@@ -258,7 +268,7 @@ void DispUpdate(I2C_TypeDef *lcdi2c, I2C_TypeDef *radioi2c, uint8_t mode)
 	}
 	else if(mode == SeekChan)	//シークモード、周波数表示
 	{
-		ChannelDisp(lcdi2c, radioi2c);
+		ChannelDisp();
 	}
 	else if(mode == Skwait)
 	{
@@ -277,43 +287,51 @@ void DispUpdate(I2C_TypeDef *lcdi2c, I2C_TypeDef *radioi2c, uint8_t mode)
 	}
 }
 
-void ChannelDisp(I2C_TypeDef *lcdi2c, I2C_TypeDef *radioi2c)
+void ChannelDisp(void)
 {
 	static const char param[] = "MHz RSSI:";
 	char channel[17];
 	char freq[4+1];		//周波数3ケタ+ドット+ヌル
 	char rssi[3+1];		//電波強度2ケタ+0+ヌル
 
-	ItoS(freq,GetChan(radioi2c),3);
-	ItoS(rssi,GetRSSI(radioi2c),3);
+	memset(freq,'0',sizeof(freq));
+	memset(rssi,'0',sizeof(rssi));
+
+	ItoS(freq, GetChan(radioi2c),3);
+	ItoS(rssi, GetRSSI(radioi2c),3);
+
 	freq[3] = freq[2];
 	freq[2] = '.';
+
 	memcpy(channel,freq,4);
 	memcpy(channel+4,param,9);
 	memcpy(channel+13,rssi,4);
+
 	PointClear(lcdi2c);
 	CMDSend(lcdi2c, RETURN_HOME);	//周波数は0番目から表示させる
 	LL_mDelay(10);
 	StringLCD(lcdi2c, channel, strlen(channel));
 }
-void ItoS(char *s, uint16_t num, uint8_t size)
+void ItoS(char *buffer,uint16_t value,uint8_t digit)
 {
-	int8_t i = size;
+   char *pbuf;
 
-	s[i] = '\0';
-	i--;
-	if(num < 100) s[0] = '0';
-	else if(num > 999) num = 999;
+   pbuf = buffer + digit;
 
-	while(num > 0)
-	{
-		s[i] = num % 10 + '0';
-		num /= 10;
-		i--;
-		if(i < 0)break;
-	}
+   *pbuf = '\0';
+   pbuf--;
+   while(value > 0 && pbuf >= buffer)
+   {
+       *pbuf = (value % 10) + '0';
+       value /= 10;
+       pbuf--;
+   }
+   if (pbuf < buffer)
+   {
+       return;
+   }
 }
-uint8_t InputMenu(I2C_TypeDef *lcdi2c)
+uint8_t InputMenu(void)
 {
 	uint8_t input = 0;
 	uint8_t count = 0;
@@ -321,7 +339,7 @@ uint8_t InputMenu(I2C_TypeDef *lcdi2c)
 #ifdef DEBUG_BOARD_ON
 	do
 	{
-		input = READ_INPUT;
+		input = ReadInput();
 		LL_mDelay(100);
 		if(!input)
 		{
@@ -329,7 +347,7 @@ uint8_t InputMenu(I2C_TypeDef *lcdi2c)
 		}
  	}while(!input);
 #else
-	LL_EXTI_EnableEvent_0_31(LL_EXTI_LINE_4|LL_EXTI_LINE_5|LL_EXTI_LINE_6|LL_EXTI_LINE_7);
+	LL_EXTI_EnableEvent_0_31(LL_EXTI_LINE_1|LL_EXTI_LINE_4|LL_EXTI_LINE_5|LL_EXTI_LINE_6|LL_EXTI_LINE_7);
 	input = ReadInput();
 	while(ReadInput())
 	{
@@ -340,30 +358,38 @@ uint8_t InputMenu(I2C_TypeDef *lcdi2c)
 			break;
 		}
 	}
-	if(count < 10)
+	if(count < DEBOUNCE_COUNT)
 	{
 		input = 0;
 		EnterSleepMode();
 	}
-	LL_EXTI_DisableEvent_0_31(LL_EXTI_LINE_4|LL_EXTI_LINE_5|LL_EXTI_LINE_6|LL_EXTI_LINE_7);
+	LL_EXTI_DisableEvent_0_31(LL_EXTI_LINE_1|LL_EXTI_LINE_4|LL_EXTI_LINE_5|LL_EXTI_LINE_6|LL_EXTI_LINE_7);
 #endif
 	if(input == STOP_PUSH)
 	{
-		EnterStopMode(lcdi2c);
+		EnterStopMode();
 	}
 	return input;
 }
 void EnterSleepMode(void)
 {
 	//入力があるまでスリープ。各ボタンはEXTIモードに。WFEで復帰
-	//LL_SuspendTick();
+	LL_TIM_EnableIT_UPDATE(TIMx);		//タイマーのセット
+	TIMx->CNT = 0;
+	LL_TIM_EnableCounter(TIMx);
+
 	LL_LPM_EnableSleep();
 	__SEV();
 	__WFE();
 	__WFE();
-	//LL_ResumeTick();
+
+	if(LL_TIM_IsActiveFlag_UPDATE(TIMx))	//割り込みがGPIOではなくタイマーなら
+	{
+		LL_TIM_ClearFlag_UPDATE(TIMx);
+		EnterStopMode();				//STOPモードへ
+	}
 }
-void EnterStopMode(I2C_TypeDef *lcdi2c)
+void EnterStopMode(void)
 {
 	LL_GPIO_ResetOutputPin(BackLight_GPIO_Port, BackLight_Pin);
 
@@ -380,14 +406,13 @@ void EnterStopMode(I2C_TypeDef *lcdi2c)
 
 	//STOP以外の入力を無効にする
 	LL_EXTI_DisableEvent_0_31(LL_EXTI_LINE_4|LL_EXTI_LINE_5|LL_EXTI_LINE_6|LL_EXTI_LINE_7);
-	//LL_SuspendTick();
+
 	LL_PWR_SetPowerMode(LL_PWR_MODE_STOP1);
 	LL_LPM_EnableDeepSleep();
 	__SEV();
 	__WFE();
 	__WFE();
-	//HAL_PWR_EnterSTOPMode(PWR_LOWPOWERMODE_STOP1, PWR_STOPENTRY_WFE);
-	//LL_ResumeTick();
+
 	LL_mDelay(100);
 	SystemClock_ReConfig();
 	LL_mDelay(10);
