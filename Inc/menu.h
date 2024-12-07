@@ -2,22 +2,52 @@
 #define MENU_H
 
 #include "main.h"
-/*
- * F446REの場合
- * XOR...PORTCの値は0x83(1000 0011)なので同じ値でXORすると常に0となる。
- * ここで入力があるとそのビットが0となり「一緒は嫌」によってそのビットのみが1となる。
- * 実際のレジスタ値は32ビットだが8ビットまで読む
- */
 
-//G030F6P6の場合
-//ピンとビットの関係はMX_GPIO_Init()内から目的のピンを探し、ctrl+クリックで辿っていく
+
+
+#define MYUSE_PIN
+
+#ifndef MYUSE_PIN
+#define CENTER_PUSH 0x10
+#define LEFT_PUSH 0x08
+#define RIGHT_PUSH 0x04
+#define BACK_PUSH 0x02
+#define STOP_PUSH 0x01
+#else
 #define CENTER_PUSH CENTER_Pin
 #define LEFT_PUSH LEFT_Pin
 #define RIGHT_PUSH RIGHT_Pin
 #define BACK_PUSH BACK_Pin
 #define STOP_PUSH STOP_Pin
-//すべてのポートA入力ピンをマスクするのでFFで良い
-//#define PORTA_MASK (CENTER_PUSH | BACK_PUSH | LEFT_PUSH | RIGHT_PUSH | STOP_Pin | STC_Pin | RESET_Pin | NC_Pin)
+#endif
+#define PUSH_ALL CENTER_PUSH | LEFT_PUSH | RIGHT_PUSH | BACK_PUSH | STOP_PUSH
+#define CHECK_ALL_PIN CENTER_Pin | LEFT_Pin | RIGHT_Pin | BACK_Pin | STOP_Pin
+
+/* *** スイッチ入力を判別する関数 ***
+ * LL関数の引数を適宜変更してください。
+ * GPIOA->GPIOポート
+ * CENRER_Pin->GPIOピン
+ * 例えばPA0ピンを使うなら
+ * LL_GPIO_IsInputPinSet(GPIOA, LL_GPIO_PIN_0)
+ **/
+static inline uint8_t ReadInput(void)
+{
+#ifndef MYUSE_PIN
+	uint8_t Push =
+			LL_GPIO_IsInputPinSet(GPIOA, CENTER_Pin) << 4 |
+			LL_GPIO_IsInputPinSet(GPIOA, LEFT_Pin) << 3 |
+			LL_GPIO_IsInputPinSet(GPIOA, RIGHT_Pin) << 2 |
+			LL_GPIO_IsInputPinSet(GPIOA, BACK_Pin) << 1 |
+			LL_GPIO_IsInputPinSet(GPIOA, STOP_Pin) << 0 ;
+#else
+	uint8_t Push = (GPIOA->IDR) & (CHECK_ALL_PIN);
+#endif
+	Push ^= PUSH_ALL;
+
+	return Push;
+}
+
+#define DEBOUNCE_COUNT 30
 
 //FREQモード
 //表示開始位置
@@ -49,20 +79,16 @@ typedef struct{
 	char freqAsci;
 }FreqTypedef;
 
-static inline uint8_t ReadInput(void)
-{
-	return (GPIOA->IDR) ^ 0xFF;
-}
 //LL_LPM_EnableSleep()と同じ
 static inline void LL_LPM_DisableDeepSleep(void)
 {
 	CLEAR_BIT(SCB->SCR, ((uint32_t)SCB_SCR_SLEEPDEEP_Msk));
 }
-
+void SetHandle(I2C_TypeDef *lcdHandle, I2C_TypeDef *radioHandle,TIM_TypeDef *TIMHandle);
 //メニュー、各モード制御関数
-void SeekMenu(I2C_TypeDef *lcdi2c, I2C_TypeDef *radioi2c);
-void TuneMenu(I2C_TypeDef *lcdi2c, I2C_TypeDef *radioi2c);
-void FreqMenu(I2C_TypeDef *lcdi2c, I2C_TypeDef *radioi2c);
+void SeekMenu(void);
+void TuneMenu(void);
+void FreqMenu(void);
 
 void InitTypedef(FreqTypedef *obj);
 /*
@@ -72,7 +98,7 @@ void FreqUpdate(FreqTypedef *obj);
 /*
  * Freqの入力値の処理と分岐を行う
  */
-void DispUpdate(I2C_TypeDef *lcdi2c, I2C_TypeDef *radioi2c, uint8_t mode);
+void DispUpdate(uint8_t mode);
 /*
  * 画面の更新をする関数
  * 処理分岐はenum Drawの値が引数modeに渡される
@@ -80,20 +106,21 @@ void DispUpdate(I2C_TypeDef *lcdi2c, I2C_TypeDef *radioi2c, uint8_t mode);
  * mode == SeekChan:受信周波数の表示
  * else:シーク実行後の画面更新
  */
-void ChannelDisp(I2C_TypeDef *lcdi2c, I2C_TypeDef *radioi2c);
+void ChannelDisp(void);
 /*
  * 受信周波数と強度(RSSI)を取得し、文字列に変換し出力する関数
  * 実行サイクル数を短縮するため、ItoSとmemcpyを組み合わせている
  * やっている内容としては下記の通り。sprintfだとだいたい3倍のサイクル数になる
  * sprint(channel,"%.1fMHz RSSI:%03d",(float)GetChan()/10,GetRSSI());
  */
-void ItoS(char *s, uint16_t num, uint8_t size);
+void ItoS(char *buffer,uint16_t value,uint8_t digit);
+//void ItoS(char *s, uint16_t num, uint8_t size);
 /*
  * 整数を文字列に変換する関数
  * 有効な数字の桁数分のsizeを渡す。
  * freqであればドットを抜いた3ケタ。RSSIは0を含んだ3ケタ
  */
-uint8_t InputMenu(I2C_TypeDef *lcdi2c);
+uint8_t InputMenu(void);
 /*
  * 入力されたボタンを判別する
  * 入力がある間は1ms毎にカウント。10回分の入力がなければチャタリングと判定する
@@ -103,7 +130,7 @@ void EnterSleepMode(void);
 /*
  * SLEEPモードに入る
  */
-void EnterStopMode(I2C_TypeDef *lcdi2c);
+void EnterStopMode(void);
 /*
  * STOPモードに入る関数
  * LCDの動作電圧を下げ、バックライトを消してからSTOPモードに入る
