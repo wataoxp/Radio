@@ -15,6 +15,7 @@
 #define TXE_READY 1
 #define RXNE_READY 1
 #define STOPF_COMPLETE 1
+#define TC_COMPLETE 1
 
 //1の間待つ
 #define BUSY_FLAG 1
