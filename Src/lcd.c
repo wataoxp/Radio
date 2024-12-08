@@ -18,7 +18,6 @@ void LCDInit(I2C_TypeDef *I2Cx,GPIO_TypeDef *GPIOx, uint32_t PinMask)
 
 	for(i = 0; i < sizeof(config); i++)
 	{
-		//PushI2C_Mem_Write(I2Cx,LCD_ADDRESS, config[i], CMD_CTRL);
 		PushI2C_Mem_Write(I2Cx, LCD_ADDRESS, config[i], CMD_CTRL, I2C_MEMADD_SIZE_8BIT);
 		//if(config[i] == (VOLTAGE_CMD)) LL_mDelay(200);
 		LL_mDelay(1);
@@ -36,10 +35,6 @@ void PointClear(I2C_TypeDef *I2Cx)
 	CMDSend(I2Cx, RETURN_HOME);
 	LL_mDelay(5);
 	StringLCD(I2Cx, clearAria,16);
-	SetCusor(I2Cx, HOME_CUSOR);
+	SetCusor(I2Cx, HOME_CUSOR,0);
 	LL_mDelay(5);
 }
-//void StringLCD(I2C_TypeDef *I2Cx, const char *str, uint8_t size)
-//{
-//	StreamI2C_Mem_Write(I2Cx, LCD_ADDRESS, (uint8_t *)str, DATA_CTRL, size);
-//}
