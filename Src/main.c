@@ -121,9 +121,9 @@ int main(void)
 		  while(1);
 	  }
 	}
-  	SetCusor(I2C1, HOME_CUSOR);
+  	SetCusor(I2C1, HOME_CUSOR,0);
   	StringLCD(I2C1, UpperStr, strlen(UpperStr));
-  	SetCusor(I2C1, ENTER_CUSOR);
+  	SetCusor(I2C1, 0,1);
 	StringLCD(I2C1, LowerStr, strlen(LowerStr));
 
   /* USER CODE END 2 */
@@ -155,9 +155,9 @@ int main(void)
 		continue;
 	}
 	ClearLCD(I2C1);
-	SetCusor(I2C1, HOME_CUSOR);
+	SetCusor(I2C1, HOME_CUSOR,0);
 	StringLCD(I2C1, UpperStr, strlen(UpperStr));
-	SetCusor(I2C1, ENTER_CUSOR);
+	SetCusor(I2C1, 0,1);
 	StringLCD(I2C1, LowerStr, strlen(LowerStr));
 	if(homeDisp)
 	{
@@ -166,7 +166,7 @@ int main(void)
 	else
 	{
 		PointClear(I2C1);
-		SetCusor(I2C1, HOME_CUSOR);
+		SetCusor(I2C1, HOME_CUSOR,0);
 		StringLCD(I2C1, UpperStr, strlen(UpperStr));
 	}
 
