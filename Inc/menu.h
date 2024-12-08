@@ -47,7 +47,7 @@ static inline uint8_t ReadInput(void)
 	return Push;
 }
 
-#define DEBOUNCE_COUNT 30
+#define DEBOUNCE_COUNT 20
 
 //FREQモード
 //表示開始位置
