@@ -114,11 +114,9 @@ void ChannelDisp(void);
  * sprint(channel,"%.1fMHz RSSI:%03d",(float)GetChan()/10,GetRSSI());
  */
 void ItoS(char *buffer,uint16_t value,uint8_t digit);
-//void ItoS(char *s, uint16_t num, uint8_t size);
 /*
  * 整数を文字列に変換する関数
- * 有効な数字の桁数分のsizeを渡す。
- * freqであればドットを抜いた3ケタ。RSSIは0を含んだ3ケタ
+ * 周波数99.9MHzまでを有効な変換対象とします。
  */
 uint8_t InputMenu(void);
 /*
