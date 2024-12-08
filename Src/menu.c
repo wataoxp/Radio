@@ -138,7 +138,7 @@ void FreqMenu(void)
 	DispUpdate(FREQ);
 	CMDSend(lcdi2c, (DISP_CMD | CUSOR_ON));	//カーソルを表示
 	LL_mDelay(1);
-	SetCusor(lcdi2c, obj.position);
+	SetCusor(lcdi2c, obj.position,0);
 
 	while(flag_fq)
 	{
@@ -172,22 +172,22 @@ void FreqMenu(void)
 		{
 			FreqUpdate(&obj);
 			obj.freqAsci = obj.currentFreq + '0';
-			SetCusor(lcdi2c, obj.position);
+			SetCusor(lcdi2c, obj.position,0);
 			StringLCD(lcdi2c, &obj.freqAsci, 1);
-			SetCusor(lcdi2c, obj.position);
+			SetCusor(lcdi2c, obj.position,0);
 		}
 		else if(obj.cnt == FREQ_MAX_COUNT)
 		{
-			SetCusor(lcdi2c, HOME_CUSOR);
+			SetCusor(lcdi2c, HOME_CUSOR,0);
 			StringLCD(lcdi2c, CheckStr, strlen(CheckStr));
-			SetCusor(lcdi2c, ENTER_CUSOR);
+			SetCusor(lcdi2c, 0,1);
 			StringLCD(lcdi2c, SelectStr,strlen(SelectStr));
 			//NOが押されたときは元に戻す
 			if(obj.mode == LEFT_PUSH || obj.mode == RIGHT_PUSH)
 			{
 				InitTypedef(&obj);
 				DispUpdate(FREQ);
-				SetCusor(lcdi2c, FREQ_START_POSTION);
+				SetCusor(lcdi2c, FREQ_START_POSTION,0);
 			}
 		}
 		else //cntが4になったとき(CENTERが押された)のみここに来る
@@ -261,9 +261,9 @@ void DispUpdate(uint8_t mode)
 	if(mode < CONFIG)	//ホーム、各メニュー初期画面
 	{
 		ClearLCD(lcdi2c);
-		SetCusor(lcdi2c, HOME_CUSOR);
+		SetCusor(lcdi2c, HOME_CUSOR,0);
 		StringLCD(lcdi2c, ModeStr[mode], strlen(ModeStr[mode]));
-		SetCusor(lcdi2c, ENTER_CUSOR);
+		SetCusor(lcdi2c, 0,1);
 		StringLCD(lcdi2c, PushStr[mode], strlen(PushStr[mode]));
 	}
 	else if(mode == SeekChan)	//シークモード、周波数表示
@@ -302,10 +302,11 @@ void ChannelDisp(void)
 
 	freq[3] = freq[2];
 	freq[2] = '.';
+	freq[4] = '\0';
 
-	memcpy(channel,freq,4);
-	memcpy(channel+4,param,9);
-	memcpy(channel+13,rssi,4);
+	memcpy(channel,freq,strlen(freq));
+	memcpy(channel+strlen(freq),param,strlen(param));
+	memcpy(channel+strlen(channel),rssi,strlen(rssi));
 
 	PointClear(lcdi2c);
 	CMDSend(lcdi2c, RETURN_HOME);	//周波数は0番目から表示させる
@@ -320,6 +321,10 @@ void ItoS(char *buffer,uint16_t value,uint8_t digit)
 
    *pbuf = '\0';
    pbuf--;
+   if(value > 999)
+   {
+	   value = 999;
+   }
    while(value > 0 && pbuf >= buffer)
    {
        *pbuf = (value % 10) + '0';
@@ -353,7 +358,7 @@ uint8_t InputMenu(void)
 	{
 		LL_mDelay(1);
 		count++;
-		if(count > 50)	//長押し時。これより短くしても更新が早すぎる
+		if(count > 120)	//長押し時。これより短くしても更新が早すぎる
 		{
 			break;
 		}
