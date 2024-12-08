@@ -54,22 +54,18 @@
 
 static inline void StringLCD(I2C_TypeDef *I2Cx, const char *str, uint8_t size)
 {
-	//StreamI2C_Mem_Write(I2Cx, LCD_ADDRESS, (uint8_t *)str, DATA_CTRL, size);
 	StreamI2C_Mem_Write(I2Cx, LCD_ADDRESS, (uint8_t*)str, DATA_CTRL, I2C_MEMADD_SIZE_8BIT, size);
 }
-static inline void SetCusor(I2C_TypeDef *I2Cx, uint8_t pos)
+static inline void SetCusor(I2C_TypeDef *I2Cx, uint8_t x,uint8_t y)
 {
-	//PushI2C_Mem_Write(I2Cx,LCD_ADDRESS,(DDRAM_ACCESS | pos), CMD_CTRL);
-	PushI2C_Mem_Write(I2Cx, LCD_ADDRESS, (DDRAM_ACCESS | pos), CMD_CTRL, I2C_MEMADD_SIZE_8BIT);
+	PushI2C_Mem_Write(I2Cx, LCD_ADDRESS, (DDRAM_ACCESS | (x + y * ENTER_CUSOR)), CMD_CTRL, I2C_MEMADD_SIZE_8BIT);
 }
 static inline void ClearLCD(I2C_TypeDef *I2Cx)
 {
-	//PushI2C_Mem_Write(I2Cx, LCD_ADDRESS, CLEAR_DISPLAY, CMD_CTRL);
 	PushI2C_Mem_Write(I2Cx, LCD_ADDRESS, CLEAR_DISPLAY, CMD_CTRL, I2C_MEMADD_SIZE_8BIT);
 }
 static inline void CMDSend(I2C_TypeDef *I2Cx, uint8_t cmd)
 {
-	//PushI2C_Mem_Write(I2Cx, LCD_ADDRESS, cmd, CMD_CTRL);
 	PushI2C_Mem_Write(I2Cx, LCD_ADDRESS, cmd, CMD_CTRL, I2C_MEMADD_SIZE_8BIT);
 }
 
@@ -80,6 +76,5 @@ void PointClear(I2C_TypeDef *I2Cx);
  * コマンド0x02を送信し、カーソルを0に戻した上でスペース(LCD内文字コードを参照)となる0xA0を送信して上書きする
  * 仮に2行目を消したいときはSetCusorを使うと良い
  */
-//void StringLCD(I2C_TypeDef *I2Cx, const char *str, uint8_t size);
 
 #endif
