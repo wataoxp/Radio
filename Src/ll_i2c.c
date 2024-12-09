@@ -2,7 +2,7 @@
  * ll_i2c.c
  *
  *  Created on: Nov 5, 2024
- *      Author: Hippe
+ *      Author: wataoxp
  */
 
 #include "ll_i2c.h"
