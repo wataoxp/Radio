@@ -1,4 +1,10 @@
 /*
+ * lcd.h
+ *
+ *  Created on: Aug 17, 2024
+ *      Author: wataoxp
+ */
+/*
  * SPLC792A用
  * ST7032互換だが、Internal OSC freq(内部周波数設定)がない
  * また電圧値はデフォルトを使用するので、Initでは送らない
