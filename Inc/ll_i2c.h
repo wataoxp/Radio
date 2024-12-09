@@ -2,7 +2,7 @@
  * ll_i2c.h
  *
  *  Created on: Nov 5, 2024
- *      Author: Hippe
+ *      Author: wataoxp
  */
 
 #ifndef INC_LL_I2C_H_
