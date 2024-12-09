@@ -1,9 +1,16 @@
+/*
+ * menu.c
+ *
+ *  Created on: Aug 17, 2024
+ *      Author: wataoxp
+ */
 #include "menu.h"
 #include "main.h"
 #include "lcd.h"
 #include "ll_i2c.h"
 #include "Radio.h"
 #include <string.h>
+#include <stdio.h>
 
 //#define DEBUG_BOARD_ON
 //#define SYSCLOCK_HSI
@@ -289,30 +296,17 @@ void DispUpdate(uint8_t mode)
 
 void ChannelDisp(void)
 {
-	static const char param[] = "MHz RSSI:";
 	char channel[17];
-	char freq[4+1];		//周波数3ケタ+ドット+ヌル
-	char rssi[3+1];		//電波強度2ケタ+0+ヌル
+	uint16_t chan = GetChan(radioi2c);
 
-	memset(freq,'0',sizeof(freq));
-	memset(rssi,'0',sizeof(rssi));
-
-	ItoS(freq, GetChan(radioi2c),3);
-	ItoS(rssi, GetRSSI(radioi2c),3);
-
-	freq[3] = freq[2];
-	freq[2] = '.';
-	freq[4] = '\0';
-
-	memcpy(channel,freq,strlen(freq));
-	memcpy(channel+strlen(freq),param,strlen(param));
-	memcpy(channel+strlen(channel),rssi,strlen(rssi));
+	snprintf(channel,sizeof(channel),"%3d.%dMHz %2ddBm",chan/10,chan%10,GetRSSI(radioi2c));
 
 	PointClear(lcdi2c);
-	CMDSend(lcdi2c, RETURN_HOME);	//周波数は0番目から表示させる
+	SetCusor(lcdi2c, 1, 0);
 	LL_mDelay(10);
 	StringLCD(lcdi2c, channel, strlen(channel));
 }
+#if 0
 void ItoS(char *buffer,uint16_t value,uint8_t digit)
 {
    char *pbuf;
@@ -336,6 +330,7 @@ void ItoS(char *buffer,uint16_t value,uint8_t digit)
        return;
    }
 }
+#endif
 uint8_t InputMenu(void)
 {
 	uint8_t input = 0;
