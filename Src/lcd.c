@@ -1,3 +1,9 @@
+/*
+ * lcd.c
+ *
+ *  Created on: Aug 17, 2024
+ *      Author: wataoxp
+ */
 #include "main.h"
 #include "lcd.h"
 #include "ll_i2c.h"
