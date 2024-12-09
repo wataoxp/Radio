@@ -1,3 +1,9 @@
+/*
+ * menu.h
+ *
+ *  Created on: Aug 17, 2024
+ *      Author: wataoxp
+ */
 #ifndef MENU_H
 #define MENU_H
 
@@ -109,14 +115,13 @@ void DispUpdate(uint8_t mode);
 void ChannelDisp(void);
 /*
  * 受信周波数と強度(RSSI)を取得し、文字列に変換し出力する関数
- * 実行サイクル数を短縮するため、ItoSとmemcpyを組み合わせている
- * やっている内容としては下記の通り。sprintfだとだいたい3倍のサイクル数になる
- * sprint(channel,"%.1fMHz RSSI:%03d",(float)GetChan()/10,GetRSSI());
  */
 void ItoS(char *buffer,uint16_t value,uint8_t digit);
+//void ItoS(char *s, uint16_t num, uint8_t size);
 /*
  * 整数を文字列に変換する関数
- * 周波数99.9MHzまでを有効な変換対象とします。
+ * 有効な数字の桁数分のsizeを渡す。
+ * freqであればドットを抜いた3ケタ。RSSIは0を含んだ3ケタ
  */
 uint8_t InputMenu(void);
 /*
@@ -138,5 +143,61 @@ void SystemClock_ReConfig(void);
  * クロックの設定関数
  * 中身はmain.cのSystemClock_Configとまったく同じ
  */
+
+/* *** ChannelDisp 古い内容 ***
+
+void ChannelDisp(I2C_HandleTypeDef *lcdi2c, I2C_HandleTypeDef *radioi2c)
+{
+	static const char mhz[] = "MHz ";
+	static const char dbm[] = "dBm";
+	char channel[17];
+	char freq[5+1];		//xxx.x\0
+	char rssi[2+1];		//xx\0
+
+	volatile uint32_t tick1,tick2,tick3,tick4;		//処理サイクルカウント保存用
+
+	LL_TIM_EnableCounter(TIM16);				//プリスケーラ0、64MHｚ
+
+	TIM16->CNT = 0;
+	tick1 = TIM16->CNT;
+	memset(freq,' ',sizeof(freq));
+	memset(channel,'\0',sizeof(channel));
+	memset(rssi,'0',sizeof(rssi));				//memset3つで200サイクル
+
+	ItoS(freq,GetChan(radioi2c),4);
+	ItoS(rssi,GetRSSI(radioi2c),2);				//この2つのItoSで約18000サイクル使っている
+
+	freq[4] = freq[3];
+	freq[3] = '.';
+	freq[5] = '\0';
+
+	memcpy(channel,freq,strlen(freq));
+	memcpy(channel+strlen(freq),mhz,4);
+	memcpy(channel+strlen(channel),rssi,2);
+	memcpy(channel+strlen(channel),dbm,3);		//memcpy4つで500サイクル
+
+	tick2 = TIM16->CNT;
+
+	TIM16->CNT = 0;
+	tick3 = TIM16->CNT;
+	uint16_t chan = GetChan(radioi2c);
+	char str[17];
+	sprintf(str,"%3d.%dMHz %2ddBm",chan/10,chan%10,GetRSSI(radioi2c));
+	tick4 = TIM16->CNT;							//21000サイクル
+
+	PointClear(lcdi2c);
+	SetCusor(lcdi2c, 1, 0);
+	HAL_Delay(10);
+	StringLCD(lcdi2c, channel, strlen(channel));
+}
+
+* TIM16を使って計測した結果、ItoSとsprintfに大きな差にはなりませんでした。
+* Itosを使う場合の総処理サイクル数は19587。約310us(0.015us*20000)
+* sprintfを使う場合の総処理サイクル数は21842。約340us
+*
+* またsprintfのみを記述してテストした結果が13000サイクル。
+* いずれにしてもより読みやすいsprintfを今回は使うことにしています。
+*
+*/
 
 #endif
