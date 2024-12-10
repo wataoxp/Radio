@@ -347,7 +347,7 @@ uint8_t InputMenu(void)
 		}
  	}while(!input);
 #else
-	LL_EXTI_EnableEvent_0_31(LL_EXTI_LINE_1|LL_EXTI_LINE_4|LL_EXTI_LINE_5|LL_EXTI_LINE_6|LL_EXTI_LINE_7);
+	LL_EXTI_EnableEvent_0_31(LL_EXTI_LINE_4|LL_EXTI_LINE_5|LL_EXTI_LINE_6|LL_EXTI_LINE_7);
 	input = ReadInput();
 	while(ReadInput())
 	{
@@ -363,7 +363,7 @@ uint8_t InputMenu(void)
 		input = 0;
 		EnterSleepMode();
 	}
-	LL_EXTI_DisableEvent_0_31(LL_EXTI_LINE_1|LL_EXTI_LINE_4|LL_EXTI_LINE_5|LL_EXTI_LINE_6|LL_EXTI_LINE_7);
+	LL_EXTI_DisableEvent_0_31(LL_EXTI_LINE_4|LL_EXTI_LINE_5|LL_EXTI_LINE_6|LL_EXTI_LINE_7);
 #endif
 	if(input == STOP_PUSH)
 	{
