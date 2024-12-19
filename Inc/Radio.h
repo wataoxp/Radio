@@ -109,13 +109,11 @@ typedef enum{
 #define FM_CHIBA UINT16_C(0x0014)
 #define FM_INTER UINT16_C(0x0005)
 #define FM_JWAVE UINT16_C(0x0035)
-#define FM_SHONAN UINT16_C(0x0047)
+#define FM_NHK_TOKYO UINT16_C(0x0041)
 #define FM_NACK5 UINT16_C(0x0023)
 #define FM_BUNKA UINT16_C(0x009c)
 #define FM_NIPPON UINT16_C(0x00aa)
 
-//局数-1
-#define STATION_NUM 8
 
 void RadioInit(I2C_TypeDef *I2Cx);
 /*
