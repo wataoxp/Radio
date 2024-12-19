@@ -112,14 +112,7 @@ int main(void)
   	//System Reset mode
 	if(!(LL_GPIO_IsInputPinSet(CENTER_GPIO_Port, CENTER_Pin)) )
 	{
-	  LL_mDelay(3000);
-	  CMDSend(I2C1, RETURN_HOME);
-	  LL_mDelay(10);
-	  StringLCD(I2C1, "DEBUG MODE", 10);
-	  if(!(LL_GPIO_IsInputPinSet(CENTER_GPIO_Port, CENTER_Pin)) )
-	  {
-		  while(1);
-	  }
+	  DebugMode(I2C1, GPIOA, CENTER_Pin);
 	}
   	SetCusor(I2C1, HOME_CUSOR,0);
   	StringLCD(I2C1, UpperStr, strlen(UpperStr));
