@@ -9,8 +9,6 @@
 
 #include "main.h"
 
-
-
 #define MYUSE_PIN
 
 #ifndef MYUSE_PIN
@@ -64,6 +62,8 @@ static inline uint8_t ReadInput(void)
 //初期値
 #define FREQ_DEFAULT_VALUE 7
 #define FREQ_DEFAULT_ASCI '7'
+
+#define LCD_MAXLINE_16 16
 
 //LCD表示の切り替え用
 #define CONFIG 3
@@ -138,6 +138,7 @@ void EnterStopMode(void);
  * STOPモードに入る関数
  * LCDの動作電圧を下げ、バックライトを消してからSTOPモードに入る
  */
+void DebugMode(I2C_TypeDef *I2Cx,GPIO_TypeDef *GPIOx,uint32_t GPIO_Pin);
 void SystemClock_ReConfig(void);
 /*
  * クロックの設定関数
