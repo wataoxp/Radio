@@ -29,25 +29,26 @@ const char* const PushStr[4] = {
 		"-Hz   Enter  +Hz",
 };
 //TUNE時の上部表示文字
-const char* const StationName[STATION_NUM + 2] = {
+const char* const StationName[] = {
 		"FM YOKOHAMA",
 		"TOKYO FM",
 		"bayfm",
 		"interFM",
 		"J-WAVE",
-		"RadioShonan",
+		"NHK FM TOKYO",
 		"NACK5",
 		"BunkaHousou",
 		"NipponHousou",
 };
 //TUNE時に利用する周波数のリスト。Radio.hで定義
-const uint16_t ChanStation[STATION_NUM + 2] = {
+const uint16_t ChanStation[] = {
 		FM_YOKOHAMA,
 		FM_TOKYO,
 		FM_CHIBA,
 		FM_INTER,
 		FM_JWAVE,
 		FM_SHONAN,
+		//FM_NHK_TOKYO,
 		FM_NACK5,
 		FM_BUNKA,
 		FM_NIPPON,
@@ -55,6 +56,8 @@ const uint16_t ChanStation[STATION_NUM + 2] = {
 static I2C_TypeDef *lcdi2c;
 static I2C_TypeDef *radioi2c;
 static TIM_TypeDef *TIMx;
+
+const uint8_t StationNum = sizeof(ChanStation) / sizeof(uint16_t);
 
 void SetHandle(I2C_TypeDef *lcdHandle, I2C_TypeDef *radioHandle,TIM_TypeDef *TIMHandle)
 {
@@ -117,10 +120,10 @@ void TuneMenu(void)
 			RadioTune(radioi2c, ChanStation[list]);
 			break;
 		case LEFT_PUSH:
-			list = (list > 0)? list-1 : STATION_NUM;
+			list = (list > 0)? list-1 : StationNum-1;
 			break;
 		case RIGHT_PUSH:
-			list = (list < STATION_NUM)? list+1 : 0;
+			list = (list < StationNum)? list+1 : 0;
 			break;
 		case BACK_PUSH:
 			flag_tn = 0;
@@ -306,31 +309,7 @@ void ChannelDisp(void)
 	LL_mDelay(10);
 	StringLCD(lcdi2c, channel, strlen(channel));
 }
-#if 0
-void ItoS(char *buffer,uint16_t value,uint8_t digit)
-{
-   char *pbuf;
 
-   pbuf = buffer + digit;
-
-   *pbuf = '\0';
-   pbuf--;
-   if(value > 999)
-   {
-	   value = 999;
-   }
-   while(value > 0 && pbuf >= buffer)
-   {
-       *pbuf = (value % 10) + '0';
-       value /= 10;
-       pbuf--;
-   }
-   if (pbuf < buffer)
-   {
-       return;
-   }
-}
-#endif
 uint8_t InputMenu(void)
 {
 	uint8_t input = 0;
@@ -432,6 +411,24 @@ void EnterStopMode(void)
 	LL_mDelay(200);
 	CMDSend(lcdi2c, FUNCTION_SET_OFF);
 	LL_mDelay(10);
+}
+void DebugMode(I2C_TypeDef *I2Cx,GPIO_TypeDef *GPIOx,uint32_t GPIO_Pin)
+{
+	LL_mDelay(3000);
+	CMDSend(I2Cx, RETURN_HOME);
+	LL_mDelay(10);
+	StringLCD(I2Cx, "DEBUG MODE", 10);
+	if(!(LL_GPIO_IsInputPinSet(GPIOx, GPIO_Pin)) )
+	{
+	  LL_mDelay(1000);
+	  while(1)
+	  {
+		  if(!LL_GPIO_IsInputPinSet(GPIOx, GPIO_Pin))
+		  {
+			  break;
+		  }
+	  }
+	}
 }
 //HSI
 #ifdef SYSCLOCK_HSI
