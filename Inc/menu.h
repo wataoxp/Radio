@@ -116,13 +116,6 @@ void ChannelDisp(void);
 /*
  * 受信周波数と強度(RSSI)を取得し、文字列に変換し出力する関数
  */
-void ItoS(char *buffer,uint16_t value,uint8_t digit);
-//void ItoS(char *s, uint16_t num, uint8_t size);
-/*
- * 整数を文字列に変換する関数
- * 有効な数字の桁数分のsizeを渡す。
- * freqであればドットを抜いた3ケタ。RSSIは0を含んだ3ケタ
- */
 uint8_t InputMenu(void);
 /*
  * 入力されたボタンを判別する
@@ -199,6 +192,7 @@ void ChannelDisp(I2C_HandleTypeDef *lcdi2c, I2C_HandleTypeDef *radioi2c)
 * またsprintfのみを記述してテストした結果が13000サイクル。
 * いずれにしてもより読みやすいsprintfを今回は使うことにしています。
 *
+* ItoSは別のファイルに移しました。
 */
 
 #endif

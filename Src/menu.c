@@ -56,7 +56,7 @@ static I2C_TypeDef *lcdi2c;
 static I2C_TypeDef *radioi2c;
 static TIM_TypeDef *TIMx;
 
-const uint8_t StationNum = sizeof(ChanStation) / sizeof(uint16_t);
+const uint8_t StationNum = (sizeof(ChanStation) / sizeof(uint16_t)) - 1;
 
 void SetHandle(I2C_TypeDef *lcdHandle, I2C_TypeDef *radioHandle,TIM_TypeDef *TIMHandle)
 {
@@ -119,7 +119,7 @@ void TuneMenu(void)
 			RadioTune(radioi2c, ChanStation[list]);
 			break;
 		case LEFT_PUSH:
-			list = (list > 0)? list-1 : StationNum-1;
+			list = (list > 0)? list-1 : StationNum;
 			break;
 		case RIGHT_PUSH:
 			list = (list < StationNum)? list+1 : 0;
@@ -141,7 +141,7 @@ void FreqMenu(void)
 	static const char SelectStr[] = "NO     OK     NO";
 	uint8_t fqmode;
 	uint8_t flag_fq = 1;
-	uint16_t value = 0;	//ここ初期化しないと正しい値にならないぞ！
+	uint16_t value = 0;						//初期化しないと正しい計算ができない
 
 	InitTypedef(&obj);
 	DispUpdate(FREQ);
@@ -159,15 +159,15 @@ void FreqMenu(void)
 			if(obj.cnt == 1)obj.position++;		//2文字目のときは次にドットを入れるため、次の文字をスキップさせる
 			obj.freq[obj.cnt] = obj.currentFreq;
 			obj.currentFreq = 0;
-			obj.mode = 0;
+			obj.push = 0;
 			obj.position++;
 			obj.cnt++;
 			break;
 		case LEFT_PUSH:
-			obj.mode = LEFT_PUSH;
+			obj.push = -1;
 			break;
 		case RIGHT_PUSH:
-			obj.mode = RIGHT_PUSH;
+			obj.push = 1;
 			break;
 		case BACK_PUSH:
 			flag_fq = 0;
@@ -192,14 +192,14 @@ void FreqMenu(void)
 			SetCusor(lcdi2c, 0,1);
 			StringLCD(lcdi2c, SelectStr,strlen(SelectStr));
 			//NOが押されたときは元に戻す
-			if(obj.mode == LEFT_PUSH || obj.mode == RIGHT_PUSH)
+			if(fqmode == LEFT_PUSH || fqmode == RIGHT_PUSH)
 			{
 				InitTypedef(&obj);
 				DispUpdate(FREQ);
 				SetCusor(lcdi2c, FREQ_START_POSTION,0);
 			}
 		}
-		else //cntが4になったとき(CENTERが押された)のみここに来る
+		else //cntがMAXを超えた時、Tune実行
 		{
 			DispUpdate(FREQ);
 			for(uint8_t i = 0; i < 3; i++)
@@ -214,45 +214,51 @@ void FreqMenu(void)
 		}
 	}
 }
+static inline void Area(int8_t *val,uint8_t min,uint8_t max)
+{
+	if(*val < min)
+	{
+		*val = max;
+	}
+	else if(*val > max)
+	{
+		*val = min;
+	}
+}
 void FreqUpdate(FreqTypedef *obj)
 {
+	int8_t val = obj->currentFreq;
+
 	if(obj->cnt == 0)
 	{
-		if(obj->mode == LEFT_PUSH){
-			obj->currentFreq = (obj->currentFreq > 7)? obj->currentFreq-1 : 9;}
-
-		else if(obj->mode == RIGHT_PUSH){
-			obj->currentFreq = (obj->currentFreq < 9)? obj->currentFreq+1 : 7;}
+		val += obj->push;
+		Area(&val, 7, 9);
 	}
-	else if(obj->cnt == 1 && obj->freq[0] != 8)
+	else if(obj->cnt == 1)
 	{
-		if(obj->freq[0] == 7)
+		switch(obj->freq[0])
 		{
-			if(obj->currentFreq < 6) {obj->currentFreq = 6;}	//Freqが6未満の時、これが無いと減るのみになってしまう
-
-			if(obj->mode == LEFT_PUSH){
-				obj->currentFreq = (obj->currentFreq > 6)? obj->currentFreq-1 : 9;}
-
-			else if(obj->mode == RIGHT_PUSH){
-				obj->currentFreq = (obj->currentFreq < 9)? obj->currentFreq+1 : 6;}
-		}
-		else if(obj->freq[0] == 9)
-		{
-			if(obj->mode == LEFT_PUSH){
-				obj->currentFreq = (obj->currentFreq > 0)? obj->currentFreq-1 : 4;}
-
-			else if(obj->mode == RIGHT_PUSH){
-				obj->currentFreq = (obj->currentFreq < 4)? obj->currentFreq+1 : 0;}
+		case 7:
+			if(val < 6) val = 6;
+			val += obj->push;
+			Area(&val, 6, 9);
+			break;
+		case 8:
+			val += obj->push;
+			Area(&val, 0, 9);
+			break;
+		case 9:
+			val += obj->push;
+			Area(&val, 0, 4);
+			break;
 		}
 	}
-	else //cntが2のとき、またはfreq[0]が8であるとき
+	else
 	{
-		if(obj->mode == LEFT_PUSH){
-			obj->currentFreq = (obj->currentFreq > 0)? obj->currentFreq-1 : 9;}
-
-		else if(obj->mode == RIGHT_PUSH){
-			obj->currentFreq = (obj->currentFreq < 9)? obj->currentFreq+1 : 0;}
+		val += obj->push;
+		Area(&val, 0, 9);
 	}
+	obj->currentFreq = val;
 }
 void InitTypedef(FreqTypedef *obj)
 {
@@ -260,8 +266,9 @@ void InitTypedef(FreqTypedef *obj)
 	obj->currentFreq = FREQ_DEFAULT_VALUE;
 	obj->position = FREQ_START_POSTION;
 	obj->freqAsci = FREQ_DEFAULT_ASCI;
+	obj->push = 0;
 }
-//基本的には下記の関数で画面を更新する
+//画面更新を管理
 void DispUpdate(uint8_t mode)
 {
 
@@ -284,7 +291,7 @@ void DispUpdate(uint8_t mode)
 		PointClear(lcdi2c);
 		StringLCD(lcdi2c, waitSeek, strlen(waitSeek));
 	}
-	else			//シークアップ、ダウンの表示
+	else			//シーク完了を通知
 	{
 		for (uint8_t i = 0; i < 2; i++)
 		{
@@ -295,7 +302,7 @@ void DispUpdate(uint8_t mode)
 		}
 	}
 }
-
+//周波数の表示
 void ChannelDisp(void)
 {
 	char channel[17];
@@ -363,9 +370,10 @@ void EnterSleepMode(void)
 
 	if(LL_TIM_IsActiveFlag_UPDATE(TIMx))	//割り込みがGPIOではなくタイマーなら
 	{
-		LL_TIM_ClearFlag_UPDATE(TIMx);
-		EnterStopMode();				//STOPモードへ
+		LL_TIM_ClearFlag_UPDATE(TIMx);		//it.cで停止済。そうしないとSTOPモード中に割り込まれる
+		EnterStopMode();					//STOPモードへ
 	}
+	LL_TIM_DisableCounter(TIMx);			//タイマー割り込み前にGPIO割り込みが入ったとき
 }
 void EnterStopMode(void)
 {
@@ -385,8 +393,9 @@ void EnterStopMode(void)
 	//STOP以外の入力を無効にする
 	LL_EXTI_DisableEvent_0_31(LL_EXTI_LINE_4|LL_EXTI_LINE_5|LL_EXTI_LINE_6|LL_EXTI_LINE_7);
 
-	LL_PWR_SetPowerMode(LL_PWR_MODE_STOP1);
-	LL_LPM_EnableDeepSleep();
+	LL_PWR_SetPowerMode(LL_PWR_MODE_STOP1);		//STOP1モードの指定
+	LL_LPM_EnableDeepSleep();					
+
 	__SEV();
 	__WFE();
 	__WFE();
@@ -398,7 +407,7 @@ void EnterStopMode(void)
 	//入力を有効にする
 	LL_EXTI_EnableEvent_0_31(LL_EXTI_LINE_4|LL_EXTI_LINE_5|LL_EXTI_LINE_6|LL_EXTI_LINE_7);
 	LL_GPIO_SetOutputPin(BackLight_GPIO_Port, BackLight_Pin);
-	LL_LPM_DisableDeepSleep();
+	LL_LPM_DisableDeepSleep();					//ディープスリープを解除(EnterSleepでも同じ事をしているけど)
 
 	CMDSend(lcdi2c, FUNCTION_SET_ON);
 	LL_mDelay(1);
@@ -410,6 +419,8 @@ void EnterStopMode(void)
 	LL_mDelay(200);
 	CMDSend(lcdi2c, FUNCTION_SET_OFF);
 	LL_mDelay(10);
+
+	LL_RCC_HSI_Disable();		//STOPモードでHSIが復帰しているので
 }
 void DebugMode(I2C_TypeDef *I2Cx,GPIO_TypeDef *GPIOx,uint32_t GPIO_Pin)
 {
